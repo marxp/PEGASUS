@@ -272,7 +272,7 @@ sub dochrtest{ # Chromosome test
 }
 
 sub makemerger{ # Makemerge - genome-wide
-system("Rscript Rscripts/makemerger.R");
+system("Rscript --vanilla --slave Rscripts/makemerger.R");
 }
 
 sub makemergerdochr{ # Makemerge - single chromosome
@@ -570,7 +570,7 @@ sub ldfiletest{ # using custom LD file - default
 			}
 			## find all snps within gene using temptempld file only
 			#print "$gene";
-			system("Rscript --vanilla Rscripts/find_snsps_win_gene.R");
+			system("Rscript --vanilla --slave Rscripts/find_snsps_win_gene.R");
 			#if ($gene=='ARID5B') {die;}
 			if (-e "tempgene.pvalue"){
 				if (-e "ld.ld") {
@@ -653,6 +653,8 @@ sub maketempgener{
 }
 
 sub checkpackages{
+	system("Rscript --vanilla --slave Rscripts checkpackages.R")
+
 	system("
 R --vanilla --slave <<EOF
 options(warn=-1)
@@ -670,19 +672,7 @@ EOF");
 
 sub numbercheck{
 	system("
-R --vanilla --slave <<EOF
-options(warn=-1)
-isnumeric <- function(s) !is.na(as.numeric(s))
-pvals <- read.table('temppvals',header=F,colClasses=c('character','numeric'))
-ifelse(isnumeric(pvals[,2]),0,1) -> isnumber
-if(sum(isnumber) > 0){
-	write.table(pvals[which(isnumber==1),],'temp',row.names=F,col.names=F,quote=F)
-}
-ifelse(pvals[,2]<0 | pvals[,2] > 1,1,0) -> notpvalue
-if(sum(notpvalue) > 0 | is.na(sum(notpvalue))){
-	write.table(pvals[which(notpvalue==1),],'invalid-pvalues',row.names=F,col.names=F,quote=F)
-}
-EOF");
+Rscript --vanilla --slave Rscripts/numbercheck.R");
 
 	if(-e "temp"){
 		system("cat temp >> invalid-pvalues");
