@@ -653,7 +653,7 @@ sub maketempgener{
 }
 
 sub checkpackages{
-	system("Rscript --vanilla --slave ./Rscripts checkpackages.R");
+	system("Rscript --vanilla --slave ./Rscripts/checkpackages.R");
 
 	system("R --vanilla --slave <<EOF
 options(warn=-1)
