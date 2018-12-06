@@ -132,7 +132,7 @@ foreach $i(@path){
 	if(-e "$i/R"){
 		$Rtimes=$Rtimes+1;
 	}
-	if(-e "$i/plink"){
+	if(-e "$i/plink1"){
 		$plinktimes=$plinktimes+1;
 	}
 }
@@ -385,10 +385,10 @@ sub sort_by_number{ $b <=> $a }
 sub plink{ # Use plink to generate ld matrix, then check for errors
 
 	if(defined($custom)){
-		system("plink --bfile custom$chr --extract tempgene.snp --matrix --r --noweb --silent --out ld > /dev/null");
+		system("plink1 --bfile custom$chr --extract tempgene.snp --matrix --r --noweb --silent --out ld > /dev/null");
 	}
 	elsif(!defined($ldfile)){
-		system("plink --bfile $chip/genebeds/$gene --extract tempgene.snp --matrix --r --noweb --silent --out ld > /dev/null");
+		system("plink1 --bfile $chip/genebeds/$gene --extract tempgene.snp --matrix --r --noweb --silent --out ld > /dev/null");
 	}
 
 
@@ -418,7 +418,7 @@ sub customtest{ # using custom set of SNPs - default
 	close(HGLIST);
 
 	for ($chr = 1; $chr <= 23; $chr++) {
-		system("plink --bfile ../$custom --chr $chr --make-bed --out custom$chr --noweb --silent > /dev/null");
+		system("plink1 --bfile ../$custom --chr $chr --make-bed --out custom$chr --noweb --silent > /dev/null");
 		if ($chr==23) {$chr ='X';}
 		open(ALLGENES, "$chip/geneset/allgene$chr") or die "Error: Cannot find $chip/geneset/allgene$chr\n";
 		@allgenes = <ALLGENES>;
@@ -451,7 +451,7 @@ sub customtest{ # using custom set of SNPs - default
 				$stop = @glistpos[2]+$upper;
 			}
 
-			system("plink --bfile custom$chr --chr $chr --from-bp $start --to-bp $stop --write-snplist --noweb --silent > /dev/null");
+			system("plink1 --bfile custom$chr --chr $chr --from-bp $start --to-bp $stop --write-snplist --noweb --silent > /dev/null");
 
 			if(-e "plink.snplist"){
 				system("mv plink.snplist tempgene.snp");
@@ -476,7 +476,7 @@ sub docustomchr { # using custom set of SNPs - chromosome
 	#close(HGLIST);
 
 	for ($chr=$dochr){
-		system("plink --bfile ../$custom --chr $chr --make-bed --out custom$chr --noweb --silent > /dev/null");
+		system("plink1 --bfile ../$custom --chr $chr --make-bed --out custom$chr --noweb --silent > /dev/null");
 		if ($chr==23) {$chr ='X';}
 		open(ALLGENES, "$chip/geneset/allgene$chr");
 		@allgenes = <ALLGENES>;
@@ -508,7 +508,7 @@ sub docustomchr { # using custom set of SNPs - chromosome
 				$stop = @glistpos[2]+$upper;
 			}
 
-			system("plink --bfile custom$chr --chr $chr --from-bp $start --to-bp $stop --write-snplist --noweb --silent > /dev/null");
+			system("plink1 --bfile custom$chr --chr $chr --from-bp $start --to-bp $stop --write-snplist --noweb --silent > /dev/null");
 			if(-e "plink.snplist"){system("mv plink.snplist tempgene.snp");}
 
 			if (-z "tempgene.snp"){next;}
