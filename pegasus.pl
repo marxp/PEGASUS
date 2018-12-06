@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 use Cwd;
-use File::Spec::Functions qw(rel2abs); 
-use File::Basename; 
+use File::Spec::Functions qw(rel2abs);
+use File::Basename;
 use Scalar::Util qw(looks_like_number);
 
 # This program is free software: you can redistribute it and/or modify
@@ -19,7 +19,7 @@ use Scalar::Util qw(looks_like_number);
 
 # PEGASUS Version 1.1
 # Priyanka Nakka, Sohini Ramachandran Lab, Brown University 2015
-# modified from VEGAS (Liu et al AJHG 2010) 
+# modified from VEGAS (Liu et al AJHG 2010)
 
 $dir = dirname(rel2abs($0));
 
@@ -49,7 +49,7 @@ for($i = 1; $i <= $#ARGV; ++$i){
 			print "-keeptimestamp\n";
 			$keeptimestamp = 1;
 		}
-		if($field eq "-custom"){ # Use custom individual genotypes 
+		if($field eq "-custom"){ # Use custom individual genotypes
 			print "-custom $ARGV[$i+1]\n";
 			$custom = "$ARGV[$i+1]";
 			$chip = "$dir/hapmapCEU";
@@ -71,10 +71,10 @@ for($i = 1; $i <= $#ARGV; ++$i){
 			print "-ld-file $ARGV[$i+1]\n";
 			$chip = "$dir/hapmapCEU";
 			#$chip = "$dir/1kgEUR";
-			$ldfile = "$ARGV[$i+1]";	
+			$ldfile = "$ARGV[$i+1]";
 		}
 		if($field eq "-fisher"){ # calculate gene scores for males and females separately and combine using fisher's method
-			$fisher = 1;	
+			$fisher = 1;
 		}
 	}
 }
@@ -185,7 +185,7 @@ if(!defined($custom)){
 # Do test
 system("echo \"Chr Gene nSNPs Start Stop Test-Stat Pvalue Error Best-SNP SNP-pvalue\" > gene-basedoutput.out");
 
-	
+
 if(defined($custom)){
 	if(defined($dochr)){
 		&docustomchr;
@@ -228,7 +228,7 @@ print "\nGene-based test complete!\n";
 
 
 #Subroutines:
-sub defaulttest{ 
+sub defaulttest{
 
 	print "\nAnnotating GWAS results...";
 	&makemerger;
@@ -242,13 +242,13 @@ sub defaulttest{
 		if(scalar(@mergefile) == 1){
 			next;
 		}
-		
+
 		print "Starting chromosome $chr\n";
 		open(ALLGENES, "$chip/geneset/allgene$chr");
 
 		@allgenes = <ALLGENES>;
 		close ALLGENES;
-	
+
 		&dogene;
 	}
 }
@@ -261,54 +261,18 @@ sub dochrtest{ # Chromosome test
 	for ($chr = $dochr) {
 
 		print "Starting chromosome $chr\n";
-	
+
 		open(ALLGENES, "$chip/geneset/allgene$chr");
 
 		@allgenes = <ALLGENES>;
 		close ALLGENES;
-	
+
 		&dogene;
 	}
 }
 
 sub makemerger{ # Makemerge - genome-wide
-system("
-R --vanilla --slave  <<EOF
-
-options(warn=-1)
-
-#read in GWAS results
-pvals <- read.table('temppvals',header=F,colClasses=c('character','numeric'))
-names(pvals) <- c('SNP','PVALUE')
-
-#read in start/stop positions for each gene
-#read.table('$chip/glist-hg18',colClasses=c('character',rep('integer',2),'character')) -> startstop
-read.table('$chip/glist-hg19',colClasses=c('character',rep('integer',2),'character')) -> startstop
-names(startstop) <- c('chr','start','stop','gene')
-
-snpgenevec <- seq(1,23)
-
-for(chr in snpgenevec){
-	if (chr == 23) {chr = 'X'}
-	filename <- paste('$chip/geneset/snpgene',chr,sep='')
-	#read in which SNPs map to which gene
-	read.table(file=filename,colClasses=c('character','character')) -> wp
-	names(wp) <- c('gene','rs')
-
-	merge(startstop,wp,by='gene',all.y=T) -> wp
-
-	#convert p-values to chi2-df1 stats
-	qchisq(pvals[,2],1,lower.tail=F) -> chi2 
-	data.frame(pvals[,1],chi2) -> chi2withrs
-	names(chi2withrs) <- c('SNP','chisq')
-
-	merge(wp,chi2withrs,by.x='rs',by.y='SNP') -> mer
-
-	writename <- paste('merged',chr,sep='')
-	write.table(mer,file=writename,row.names=F,quote=F)
-}
-
-EOF");
+system("Rscript Rscripts/makemerger.R");
 }
 
 sub makemergerdochr{ # Makemerge - single chromosome
@@ -334,7 +298,7 @@ names(wp) <- c('gene','rs')
 merge(startstop,wp,by='gene',all.y=T) -> wp
 
 #convert p-values to chi2-df1 stats
-qchisq(pvals[,2],1,lower.tail=F) -> chi2 
+qchisq(pvals[,2],1,lower.tail=F) -> chi2
 data.frame(pvals[,1],chi2) -> chi2withrs
 names(chi2withrs) <- c('SNP','chisq')
 
@@ -346,22 +310,22 @@ EOF");
 }
 
 sub dogene{ # Main gene-based test outline
-			
+
 	foreach $gene (@allgenes){
 		chomp($gene);
-		
+
 		open(MERGEDFILE,"merged$chr");
 		@tempgene = grep /\b $gene \b/i, <MERGEDFILE>;
 		close(MERGEDFILE);
-		
+
 		open(PRINTTEMPGENE,">tempgene");
 		print PRINTTEMPGENE "@tempgene";
 		close(PRINTTEMPGENE);
-		
+
 		if(-z "tempgene"){next;} # If file is empty, move on
-		
+
 		system("awk  '{print \$1;}' tempgene > tempgene.snp");
-		
+
 		open(PREDEFGENE, "$chip/genebeds/$gene.bim");
 		@predefgene = <PREDEFGENE>;
 		close PREDEFGENE;
@@ -370,14 +334,14 @@ sub dogene{ # Main gene-based test outline
 		#if (scalar(@predefgene) == 0){
 		#	print "Gene doesn't exist...\n";
 		#}
-		#else{	
+		#else{
 			&hapsims;
 		#}
 	}
-	
+
 }
 
-sub hapsims {	
+sub hapsims {
 	&plink;
 				system("
 
@@ -447,14 +411,14 @@ EOF
 sub sort_by_number{ $b <=> $a }
 
 sub plink{ # Use plink to generate ld matrix, then check for errors
-	
+
 	if(defined($custom)){
 		system("plink --bfile custom$chr --extract tempgene.snp --matrix --r --noweb --silent --out ld > /dev/null");
 	}
 	elsif(!defined($ldfile)){
 		system("plink --bfile $chip/genebeds/$gene --extract tempgene.snp --matrix --r --noweb --silent --out ld > /dev/null");
 	}
-	
+
 
 	open(PLINKLD, "ld.ld");
 	@plinkld = <PLINKLD>;
@@ -465,13 +429,13 @@ sub plink{ # Use plink to generate ld matrix, then check for errors
 	if(scalar(@plinkld == 1)){
 		@plinkld = 1;
 	}
-	
+
 	open(PRINTPLINKLD, ">ld.ld");
 	print PRINTPLINKLD "@plinkld";
 	$numsnps = scalar(@plinkld);
 	close PRINTPLINKLD;
 	close PLINKLD;
-	
+
 }
 
 sub customtest{ # using custom set of SNPs - default
@@ -488,20 +452,20 @@ sub customtest{ # using custom set of SNPs - default
 		@allgenes = <ALLGENES>;
 		#close(ALLGENES);
 		if ($chr=='X') {$chr =23;}
-		
+
 		foreach $gene (@allgenes){
 
 			if(-e "tempgene.snp"){system("rm tempgene.snp");}
 			if(-e "tempgene.pvalue"){system("rm tempgene.pvalue");}
 			if(-e "gene.position"){system("rm gene.position");}
-			
+
 			chomp($gene);
 			#system("grep -w \"$gene\" ../glist-hg18 > gene.position");
 			system("grep -w \"$gene\" ../glist-hg19 > gene.position");
-			@glistpos = grep(/\b$gene\b/, @hglist);	
+			@glistpos = grep(/\b$gene\b/, @hglist);
 			chomp(@glistpos);
 			@glistpos = split(/\s+/,@glistpos[0]);
-		
+
 			if(!defined($lower)){
 				$start = @glistpos[1]-50000;
 			}
@@ -514,17 +478,17 @@ sub customtest{ # using custom set of SNPs - default
 			else{
 				$stop = @glistpos[2]+$upper;
 			}
-	
-			system("plink --bfile custom$chr --chr $chr --from-bp $start --to-bp $stop --write-snplist --noweb --silent > /dev/null"); 
+
+			system("plink --bfile custom$chr --chr $chr --from-bp $start --to-bp $stop --write-snplist --noweb --silent > /dev/null");
 
 			if(-e "plink.snplist"){
 				system("mv plink.snplist tempgene.snp");
 			}
-			
+
 			if (-z "tempgene.snp"){next;}
 
-			system("grep -F -w -f tempgene.snp temppvals > tempgene.pvalue");	
-			
+			system("grep -F -w -f tempgene.snp temppvals > tempgene.pvalue");
+
 			&maketempgener;
 			&hapsims;
 		}
@@ -533,7 +497,7 @@ sub customtest{ # using custom set of SNPs - default
 
 sub docustomchr { # using custom set of SNPs - chromosome
 	print "\nReading custom genotypes...done\n\n";
-	
+
 	#open(HGLIST,"../glist-hg18") or die "Error: Cannot find glist-hg18\n";
 	open(HGLIST,"../glist-hg19") or die "Error: Cannot find glist-hg19\n";
 	@hglist = <HGLIST>;
@@ -551,14 +515,14 @@ sub docustomchr { # using custom set of SNPs - chromosome
 			if(-e "tempgene.snp"){system("rm tempgene.snp");}
 			if(-e "tempgene.pvalue"){system("rm tempgene.pvalue");}
 			if(-e "gene.position"){system("rm gene.position");}
-			
+
 			chomp($gene);
 			#system("grep -w \"$gene\" ../glist-hg18 > gene.position");
 			system("grep -w \"$gene\" ../glist-hg19 > gene.position");
-			@glistpos = grep(/\b$gene\b/, @hglist);	
+			@glistpos = grep(/\b$gene\b/, @hglist);
 			chomp(@glistpos);
 			@glistpos = split(/\s+/,@glistpos[0]);
-		
+
 			if(!defined($lower)){
 				$start = @glistpos[1]-50000;
 			}
@@ -571,14 +535,14 @@ sub docustomchr { # using custom set of SNPs - chromosome
 			else{
 				$stop = @glistpos[2]+$upper;
 			}
-	
-			system("plink --bfile custom$chr --chr $chr --from-bp $start --to-bp $stop --write-snplist --noweb --silent > /dev/null"); 
+
+			system("plink --bfile custom$chr --chr $chr --from-bp $start --to-bp $stop --write-snplist --noweb --silent > /dev/null");
 			if(-e "plink.snplist"){system("mv plink.snplist tempgene.snp");}
-			
+
 			if (-z "tempgene.snp"){next;}
 
-			system("grep -F -w -f tempgene.snp temppvals > tempgene.pvalue");	
-			
+			system("grep -F -w -f tempgene.snp temppvals > tempgene.pvalue");
+
 			&maketempgener;
 			&hapsims;
 		}
@@ -586,20 +550,20 @@ sub docustomchr { # using custom set of SNPs - chromosome
 }
 
 sub ldfiletest{ # using custom LD file - default
-	
+
 	#open(HGLIST,"../glist-hg18") or die "Error: Cannot find glist-hg18\n";
 	open(HGLIST,"../glist-hg19") or die "Error: Cannot find glist-hg19\n";
 	@hglist = <HGLIST>;
 	close(HGLIST);
 
-	for ($chr = 1; $chr <= 23; $chr++) {	
+	for ($chr = 1; $chr <= 23; $chr++) {
 		system("awk '\$1==$chr {print \$0}' ../glist-hg19 > allgene$chr\n"); ## find all genes on chromosome
 		if ($chr==23) {$chr =='X';}
 		open(ALLGENES, "allgene$chr") or die "Error: Cannot find allgene$chr\n";
 		#open(ALLGENES, "$chip/geneset/allgene$chr") or die "Error: Cannot find $chip/geneset/allgene$chr\n";
 		@allgenes = <ALLGENES>;
 		close(ALLGENES);
-		
+
 		system("awk '\$1==$chr {print \$0}' $ldfile > temptempld"); ## subset ld file by chromosome
 
 		foreach $gene (@allgenes){
@@ -609,17 +573,17 @@ sub ldfiletest{ # using custom LD file - default
 			if(-e "gene.position"){system("rm gene.position");}
 			if(-e "templd"){system("rm templd");}
 			if(-e "ld.ld"){system("rm ld.ld");}
-			
+
 			chomp($gene);
 			@items = split(/\s+/,$gene);
 			$gene = $items[3];
-			#print "$gene"; 
+			#print "$gene";
 			#system("grep -w \"$gene\" ../glist-hg18 > gene.position");
 			system("grep -w \"$gene\" ../glist-hg19 > gene.position");
-			@glistpos = grep(/\b$gene\b/, @hglist);	
+			@glistpos = grep(/\b$gene\b/, @hglist);
 			chomp(@glistpos);
 			@glistpos = split(/\s+/,@glistpos[0]);
-			
+
 			if(!defined($lower)){
 				$start = @glistpos[1]-50000;
 			}
@@ -633,7 +597,7 @@ sub ldfiletest{ # using custom LD file - default
 				$stop = @glistpos[2]+$upper;
 			}
 			## find all snps within gene using temptempld file only
-			#print "$gene"; 
+			#print "$gene";
 			system("
 
 R --vanilla --slave  <<EOF
@@ -689,14 +653,14 @@ EOF
 				}
 			}
 			else {next;}
-			
+
 		}
 	}
 }
 
 sub doldchr{ # using custom LD file - for one chromosome
-	
-	
+
+
 	#open(HGLIST,"../glist-hg18") or die "Error: Cannot find glist-hg18\n";
 	open(HGLIST,"../glist-hg19") or die "Error: Cannot find glist-hg19\n";
 	@hglist = <HGLIST>;
@@ -709,11 +673,11 @@ sub doldchr{ # using custom LD file - for one chromosome
 		#open(ALLGENES, "$chip/geneset/allgene$chr") or die "Error: Cannot find $chip/geneset/allgene$chr\n";
 		@allgenes = <ALLGENES>;
 		close(ALLGENES);
-		
+
 		system("awk '\$1==$chr {print \$0}' $ldfile > temptempld"); ## subset ld file by chromosome
 
 		foreach $gene (@allgenes){
-			#print "$gene"; 
+			#print "$gene";
 			if(-e "tempgene.pvalue"){system("rm tempgene.pvalue");}
 			if(-e "gene.position"){system("rm gene.position");}
 			if(-e "templd"){system("rm templd");}
@@ -724,7 +688,7 @@ sub doldchr{ # using custom LD file - for one chromosome
 			$gene = $items[3];
 			#system("grep -w \"$gene\" ../glist-hg18 > gene.position");
 			system("grep -w \"$gene\" ../glist-hg19 > gene.position");
-			@glistpos = grep(/\b$gene\b/, @hglist);	
+			@glistpos = grep(/\b$gene\b/, @hglist);
 			chomp(@glistpos);
 			@glistpos = split(/\s+/,@glistpos[0]);
 
@@ -796,7 +760,7 @@ EOF
 				}
 			}
 			else {next;}
-		}	
+		}
 	}
 }
 
@@ -818,7 +782,7 @@ EOF");
 system("awk '{print \$1;}' tempgene > tempgene.snp");
 }
 }
-	
+
 sub checkpackages{
 	system("
 R --vanilla --slave <<EOF
