@@ -653,10 +653,9 @@ sub maketempgener{
 }
 
 sub checkpackages{
-	system("Rscript --vanilla --slave Rscripts checkpackages.R")
+	system("Rscript --vanilla --slave Rscripts checkpackages.R");
 
-	system("
-R --vanilla --slave <<EOF
+	system("R --vanilla --slave <<EOF
 options(warn=-1)
 write.table(.packages(all.available=T),'R-packagelist',quote=F,col.names=F,row.names=F)
 EOF");
