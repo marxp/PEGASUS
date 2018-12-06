@@ -278,35 +278,7 @@ system("Rscript Rscripts/makemerger.R");
 sub makemergerdochr{ # Makemerge - single chromosome
 
 system("
-R --vanilla --slave  <<EOF
-
-options(warn=-1)
-
-#read in GWAS results
-pvals <- read.table('temppvals',header=F,colClasses=c('character','numeric'))
-names(pvals) <- c('SNP','PVALUE')
-
-#read in start/stop positions for each gene
-#read.table('$chip/glist-hg18',colClasses=c('character',rep('integer',2),'character')) -> startstop
-read.table('$chip/glist-hg19',colClasses=c('character',rep('integer',2),'character')) -> startstop
-names(startstop) <- c('chr','start','stop','gene')
-
-#read in which SNPs map to which gene
-read.table('$chip/geneset/snpgene$dochr',colClasses=c('character','character')) -> wp
-names(wp) <- c('gene','rs')
-
-merge(startstop,wp,by='gene',all.y=T) -> wp
-
-#convert p-values to chi2-df1 stats
-qchisq(pvals[,2],1,lower.tail=F) -> chi2
-data.frame(pvals[,1],chi2) -> chi2withrs
-names(chi2withrs) <- c('SNP','chisq')
-
-merge(wp,chi2withrs,by.x='rs',by.y='SNP') -> mer
-
-write.table(mer,file='merged$dochr',row.names=F,quote=F)
-
-EOF");
+Rscript --vanilla --slave  Rscripts/makemergerdochr.R");
 }
 
 sub dogene{ # Main gene-based test outline
@@ -598,53 +570,7 @@ sub ldfiletest{ # using custom LD file - default
 			}
 			## find all snps within gene using temptempld file only
 			#print "$gene";
-			system("
-
-R --vanilla --slave  <<EOF
-
-options(warn=-1)
-rm(list = ls(all = TRUE))
-
-ld = read.table('temptempld', header = F, colClasses=c('integer','integer', 'character', 'integer', 'integer', 'character', 'numeric'))
-names(ld) <- c('CHR_A','BP_A','SNP_A','CHR_B','BP_B','SNP_B','R')
-ld = ld[which(ld[,2]>=$start & ld[,2]<=$stop),]
-ld = ld[which(ld[,5]>=$start & ld[,5]<=$stop),]
-
-if (nrow(ld) >=1) {
-	snps = unique(c(ld[,3], ld[,6]))
-	temppvals = read.table('temppvals', header = F, colClasses = c('character', 'numeric'))
-	snpps = temppvals[which(temppvals[,1] %in% snps),]
-	#snps <- snpps[,1]
-	if (nrow(snpps)==1) {
-		write.table(snpps, 'tempgene.pvalue', row.names=F,col.names=F, quote = F)
-		system('echo 1 > ld.ld')
-	}
-	if (nrow(snpps) > 1) {
-		write.table(snpps, 'tempgene.pvalue', row.names=F,col.names=F, quote = F)
-		ld = ld[,c(3,6,7)]
-		#list = unique(c(ld$SNP_A, ld$SNP_B))
-		#dummy = as.data.frame(cbind(snpps[,1], snpps[,1], rep(1.0, nrow(snpps))))
-		dummy = as.data.frame(cbind(snps, snps, rep(1.0, length(snps))))
-		names(dummy)<- names(ld)
-		ld = rbind(ld, dummy)
-		ldmat = reshape(ld, direction='wide', timevar = 'SNP_B', idvar = 'SNP_A')
-		ldmat = ldmat[order(match(ldmat[,1], snpps[,1])),] #change row order
-		rownames(ldmat) = ldmat[,1]
-		ldmat = ldmat[,-1]
-		ldmat = ldmat[,order(match(names(ldmat), paste('R.', snpps[,1], sep = '')))]# change column order to make (upper) triangular matrix
-		ldmat[is.na(ldmat)] <- 0.0
-		ldmat[ldmat == 'NaN'] <- 0.0
-		ldmat = apply(ldmat, 1, as.numeric)
-		#print(dim(ldmat))
-		if (isSymmetric(unname(as.matrix(ldmat))) == FALSE) {
-  			ldmat = ldmat+ t(ldmat)
-  			diag(ldmat) <- 1.0
-		}
-		write.table(ldmat, 'ld.ld', row.names=F,col.names=F, quote = F)
-	}
-}
-EOF
-");
+			system("Rscript --vanilla Rscripts/find_snsps_win_gene.R");
 			#if ($gene=='ARID5B') {die;}
 			if (-e "tempgene.pvalue"){
 				if (-e "ld.ld") {
@@ -705,53 +631,7 @@ sub doldchr{ # using custom LD file - for one chromosome
 				$stop = @glistpos[2]+$upper;
 			}
 			## find all snps within gene using temptempld file only
-			system("
-
-R --vanilla --slave  <<EOF
-
-options(warn=-1)
-rm(list = ls(all = TRUE))
-
-ld = read.table('temptempld', header = F, colClasses=c('integer','integer', 'character', 'integer', 'integer', 'character', 'numeric'))
-names(ld) <- c('CHR_A','BP_A','SNP_A','CHR_B','BP_B','SNP_B','R')
-ld = ld[which(ld[,2]>=$start & ld[,2]<=$stop),]
-ld = ld[which(ld[,5]>=$start & ld[,5]<=$stop),]
-
-if (nrow(ld) >=1) {
-	snps = unique(c(ld[,3], ld[,6]))
-	temppvals = read.table('temppvals', header = F, colClasses = c('character', 'numeric'))
-	snpps = temppvals[which(temppvals[,1] %in% snps),]
-	#snps <- snpps[,1]
-	if (nrow(snpps)==1) {
-		write.table(snpps, 'tempgene.pvalue', row.names=F,col.names=F, quote = F)
-		system('echo 1 > ld.ld')
-	}
-	if (nrow(snpps) > 1) {
-		write.table(snpps, 'tempgene.pvalue', row.names=F,col.names=F, quote = F)
-		ld = ld[,c(3,6,7)]
-		#list = unique(c(ld$SNP_A, ld$SNP_B))
-		#dummy = as.data.frame(cbind(snpps[,1], snpps[,1], rep(1.0, nrow(snpps))))
-		dummy = as.data.frame(cbind(snps, snps, rep(1.0, length(snps))))
-		names(dummy)<- names(ld)
-		ld = rbind(ld, dummy)
-		ldmat = reshape(ld, direction='wide', timevar = 'SNP_B', idvar = 'SNP_A')
-		ldmat = ldmat[order(match(ldmat[,1], snpps[,1])),] #change row order
-		rownames(ldmat) = ldmat[,1]
-		ldmat = ldmat[,-1]
-		ldmat = ldmat[,order(match(names(ldmat), paste('R.', snpps[,1], sep = '')))]# change column order to make (upper) triangular matrix
-		ldmat[is.na(ldmat)] <- 0.0
-		ldmat[ldmat == 'NaN'] <- 0.0
-		ldmat = apply(ldmat, 1, as.numeric)
-		#print(dim(ldmat))
-		if (isSymmetric(unname(as.matrix(ldmat))) == FALSE) {
-  			ldmat = ldmat+ t(ldmat)
-  			diag(ldmat) <- 1.0
-		}
-		write.table(ldmat, 'ld.ld', row.names=F,col.names=F, quote = F)
-	}
-}
-EOF
-");
+			system("Rscript --vanilla --slave  Rscripts/find_snsps_win_gene.R --start $start --stop $stop");
 
 			if (-e "tempgene.pvalue"){
 				if (-e "ld.ld") {
@@ -766,21 +646,10 @@ EOF
 
 
 sub maketempgener{
-unless(-z "tempgene.pvalue"){
-	system("
-
-R --vanilla --slave <<EOF
-options(warn=-1)
-pvals <- read.table('tempgene.pvalue',header=F, colClasses = c('character', 'numeric'))
-pvals = pvals[order(pvals[,1]),]
-positions <- read.table('gene.position',header=F)
-tempgene <- data.frame(pvals[,1],rep(positions[,4],length(pvals[,1])),rep(positions[,1],length(pvals[,1])),rep(positions[,2],length(pvals[,1])),rep(positions[,3],length(pvals[,1])),qchisq(pvals[,2],1,lower.tail=F))
-write.table(tempgene,'tempgene',row.names=F,col.names=F,quote=F)
-
-EOF");
-
-system("awk '{print \$1;}' tempgene > tempgene.snp");
-}
+	unless(-z "tempgene.pvalue"){
+		system("Rscript --vanilla --slave Rscripts/maketempgener.R");
+		system("awk '{print \$1;}' tempgene > tempgene.snp");
+	}
 }
 
 sub checkpackages{
