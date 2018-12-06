@@ -272,13 +272,13 @@ sub dochrtest{ # Chromosome test
 }
 
 sub makemerger{ # Makemerge - genome-wide
-system("Rscript --vanilla --slave Rscripts/makemerger.R");
+system("Rscript --vanilla --slave ./Rscripts/makemerger.R");
 }
 
 sub makemergerdochr{ # Makemerge - single chromosome
 
 system("
-Rscript --vanilla --slave  Rscripts/makemergerdochr.R");
+Rscript --vanilla --slave  ./Rscripts/makemergerdochr.R");
 }
 
 sub dogene{ # Main gene-based test outline
@@ -570,7 +570,7 @@ sub ldfiletest{ # using custom LD file - default
 			}
 			## find all snps within gene using temptempld file only
 			#print "$gene";
-			system("Rscript --vanilla --slave Rscripts/find_snsps_win_gene.R");
+			system("Rscript --vanilla --slave ./Rscripts/find_snsps_win_gene.R");
 			#if ($gene=='ARID5B') {die;}
 			if (-e "tempgene.pvalue"){
 				if (-e "ld.ld") {
@@ -631,7 +631,7 @@ sub doldchr{ # using custom LD file - for one chromosome
 				$stop = @glistpos[2]+$upper;
 			}
 			## find all snps within gene using temptempld file only
-			system("Rscript --vanilla --slave  Rscripts/find_snsps_win_gene.R --start $start --stop $stop");
+			system("Rscript --vanilla --slave  ./Rscripts/find_snsps_win_gene.R --start $start --stop $stop");
 
 			if (-e "tempgene.pvalue"){
 				if (-e "ld.ld") {
@@ -647,13 +647,13 @@ sub doldchr{ # using custom LD file - for one chromosome
 
 sub maketempgener{
 	unless(-z "tempgene.pvalue"){
-		system("Rscript --vanilla --slave Rscripts/maketempgener.R");
+		system("Rscript --vanilla --slave ./Rscripts/maketempgener.R");
 		system("awk '{print \$1;}' tempgene > tempgene.snp");
 	}
 }
 
 sub checkpackages{
-	system("Rscript --vanilla --slave Rscripts checkpackages.R");
+	system("Rscript --vanilla --slave ./Rscripts checkpackages.R");
 
 	system("R --vanilla --slave <<EOF
 options(warn=-1)
@@ -671,7 +671,7 @@ EOF");
 
 sub numbercheck{
 	system("
-Rscript --vanilla --slave Rscripts/numbercheck.R");
+Rscript --vanilla --slave ./Rscripts/numbercheck.R");
 
 	if(-e "temp"){
 		system("cat temp >> invalid-pvalues");
